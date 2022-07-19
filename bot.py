@@ -1,53 +1,62 @@
-from dis import disco
+from urllib import response
 import discord
 from discord.ext import commands
+from discord import app_commands
 import os
 from dotenv import load_dotenv
 import json
 
 load_dotenv()
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 token = os.getenv('TOKEN')
 
+class abot(discord.Client):
+    def __init__(self):
+        super().__init__(intents=discord.Intents.default())
+        self.sync = False
 
-@bot.event
-async def on_ready():
-    print('Bot is live!')
+    async def on_ready(self):
+        await tree.sync(guild=discord.Object(id=653484637934321674))
+        self.sync = True
+        print('Bot is Online')
 
-@bot.command()
-async def create_channel(ctx):
-    for channel in ctx.guild.text_channels:
-        if channel.name == str(ctx.author.id):
-            return await ctx.send(embed=discord.Embed(title='Failure!', description=f'Channel <#{channel.id}> already created!', color=discord.Color.red()))
-    guild = ctx.guild
-    author = ctx.author
-    overwrites = {
-        guild.default_role: discord.PermissionOverwrite(read_messages=False),
-        guild.me: discord.PermissionOverwrite(read_messages=True),
-        author: discord.PermissionOverwrite(read_messages=True)
+slashBot = abot()
+tree = app_commands.CommandTree(slashBot)
+
+@tree.command(name='create_channel', description='creates a private channel for the user', guild=discord.Object(id=653484637934321674))
+async def self(interaction: discord.Interaction):
+    guild = interaction.guild
+    user = interaction.user
+    for channel in guild.text_channels:
+        if channel.name == str(interaction.user.id):
+            return await interaction.response.send_message(embed=discord.Embed(title='Failure!', description=f'Channel <#{channel.id}> already created!', color=discord.Color.red()))
+        guild = interaction.guild
+        user = interaction.user
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            guild.me: discord.PermissionOverwrite(read_messages=True),
+            user: discord.PermissionOverwrite(read_messages=True)
     }
 
-    channel = await ctx.guild.create_text_channel(str(ctx.author.id), overwrites=overwrites)
-    return await ctx.send(embed=discord.Embed(title='Success!', description=f'Channel <#{channel.id}> created!', color=discord.Color.green()))
+        channel = await guild.create_text_channel(str(interaction.user.id), overwrites=overwrites)
+        return await interaction.response.send_message(embed=discord.Embed(title='Success!', description=f'Channel <#{channel.id}> created!', color=discord.Color.green()))
 
-@bot.command()
-async def bid(ctx, amount:int, *, player:str):
-    name = str(ctx.author.id)
-    if name in ctx.guild.text_channels:
-        await ctx.message.delete()
-        raise commands.PrivateMessageOnly('You can\'t run this command outside a private channel The command you typed is being deleted for secrecy')
+@tree.command(name='place_bid', description='place a bid on a player', guild=discord.Object(id=653484637934321674))
+async def self(interaction: discord.Interaction, bid: int, player: str):
+    name = str(interaction.user.id)
+    if name in interaction.guild.text_channels:
+        raise commands.PrivateMessageOnly('You can\'t run this command outside a private channel!')
     with open('data.json', 'r') as data_file:
         data = json.loads(data_file.read() or '{}')
         oldamount = 0
-        if not str(ctx.author.id) in data:
-            data[str(ctx.author.id)] = {player.lower(): amount}
+        if not str(interaction.user.id) in data:
+            data[str(interaction.user.id)] = {player.lower(): bid}
         else:
-            oldamount = data[str(ctx.author.id)].get(player.lower()) or 0
-            data[str(ctx.author.id)].update({player.lower(): amount})
+            oldamount = data[str(interaction.user.id)].get(player.lower()) or 0
+            data[str(interaction.user.id)].update({player.lower(): bid})
         data_file.close()
     with open('data.json', 'w') as data_file:
         data_file.write(json.dumps(data, indent=4))
         data_file.close()
-    return await ctx.send(embed=discord.Embed(title='Success!', description=f"Changed your bid of {player} from {oldamount} to {amount}", color=discord.Color.green()))
+    return await interaction.response.send_message(embed=discord.Embed(title='Success!', description=f"Changed your bid of {player} from {oldamount} to {bid}", color=discord.Color.green())) 
 
-bot.run(token)
+slashBot.run(token)
