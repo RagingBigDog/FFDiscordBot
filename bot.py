@@ -27,20 +27,21 @@ tree = app_commands.CommandTree(slashBot)
 @tree.command(name='create_channel', description='creates a private channel for the user', guild=discord.Object(id=653484637934321674))
 async def self(interaction: discord.Interaction):
     guild = interaction.guild
-    user = interaction.user
-    for channel in guild.text_channels:
-        if channel.name == str(interaction.user.id):
-            return await interaction.response.send_message(embed=discord.Embed(title='Failure!', description=f'Channel <#{channel.id}> already created!', color=discord.Color.red()))
-        guild = interaction.guild
-        user = interaction.user
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            guild.me: discord.PermissionOverwrite(read_messages=True),
-            user: discord.PermissionOverwrite(read_messages=True)
+    user = interaction.user.name
+    cat = discord.utils.get(guild.categories, name='Private Channels')
+    chan = discord.utils.get(guild.channels, name=user) or None
+    for channel in guild.channels:
+        if chan == channel:
+            print('made it')
+            return await interaction.response.send_message(embed=discord.Embed(title='Failure!', description=f'Channel <{channel.id}> already created!', color=discord.Color.red()))
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        guild.me: discord.PermissionOverwrite(read_messages=True),
+        user: discord.PermissionOverwrite(read_messages=True)
     }
 
-        channel = await guild.create_text_channel(str(interaction.user.id), overwrites=overwrites)
-        return await interaction.response.send_message(embed=discord.Embed(title='Success!', description=f'Channel <#{channel.id}> created!', color=discord.Color.green()))
+    channel = await guild.create_text_channel(str(interaction.user.id), overwrites=overwrites, category=cat)
+    return await interaction.response.send_message(embed=discord.Embed(title='Success!', description=f'Channel <#{channel.id}> created!', color=discord.Color.green()))
 
 @tree.command(name='place_bid', description='place a bid on a player', guild=discord.Object(id=653484637934321674))
 async def self(interaction: discord.Interaction, bid: int, player: str):
@@ -86,5 +87,6 @@ async def self(interaction: discord.Interaction):
             for s in strings:
                 await interaction.response.send_message(s)
     
+
 
 slashBot.run(token)
