@@ -1,5 +1,6 @@
 from dis import dis
 import string
+from unicodedata import name
 from urllib import response
 import discord
 from discord.ext import commands
@@ -45,7 +46,7 @@ async def self(interaction: discord.Interaction):
 @tree.command(name='place_bid', description='place a bid on a player', guild=discord.Object(id=653484637934321674))
 async def self(interaction: discord.Interaction, bid: int, player: str):
     name = str(interaction.user.id)
-    if name != interaction.channel.id :
+    if name != interaction.channel.name:
         await interaction.response.send_message(f'You can\'t run this command outside your private channel')
         raise app_commands.NoPrivateMessage('You can\'t run this command outside a private channel!')
     else:
@@ -80,11 +81,39 @@ async def self(interaction: discord.Interaction):
             else:
                 return await interaction.response.send_message(f'You have no bids!')
             
+            data_file.close()
             n = 4000
             strings = [string[i:i+n] for i in range(0, len(string), n)]
 
             for s in strings:
                 await interaction.response.send_message(s)
-    
 
+@tree.command(name='delete_bid', description='deletes a bid', guild=discord.Object(id=653484637934321674))
+async def self(interaction: discord.Interaction, player: str):
+    name = str(interaction.user.id)
+    if name != interaction.channel.name:
+        await interaction.response.send_message(f'You can\'t run this command outside your private channel')
+        raise app_commands.NoPrivateMessage('You can\'t run this command outside a private channel!')
+    else:
+        with open('data.json', 'r') as data_file:
+            data = json.loads(data_file.read() or '{}')
+            mdata = data.get(str(interaction.user.id)) or None
+            if mdata:
+                for pdata in mdata:
+                    print(pdata)
+                    if player in pdata:
+                        print(player)
+                        del  pdata[player]  
+            else:
+                data_file.close()
+                return await interaction.response.send_message(f'You have no bids!')
+
+            data_file.close()
+
+        with open('data.json', 'w') as data_file:
+            data_file.write(json.dumps(data, indent=4))
+            data_file.close()
+            
+            await interaction.response.send_message(f'The bid has been deleted')
+            
 slashBot.run(token)
