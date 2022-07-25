@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 import json
 
+
 load_dotenv()
 token = os.getenv('TOKEN')
 
@@ -98,20 +99,30 @@ async def self(interaction: discord.Interaction, player: str):
         with open('data.json', 'r') as data_file:
             data = json.loads(data_file.read() or '{}')
             mdata = data.get(str(interaction.user.id)) or None
+
             if mdata:
                 for pdata in mdata:
-                    print(pdata)
+
+                    # print(pdata)
                     if player in pdata:
-                        print(player)
-                        del  pdata[player]  
+                        # print(player)
+                        print("mdata=", mdata, "pdata=", pdata, "player=", player, "this is stuff")
+                        print("mdata type = ", type (mdata))
+                        print("player type = ", type (player))
+                        print("pdata type = ", type (pdata))
+                        pdata = "shammies are cool", "42"
+                        print(pdata)
+                        # del pdata[player, None]
+                        # del pdata["player"]
+                        # del pdata["jimmynewtron"]
+                        # pdata.pop(player)
+                        with open('data.json', 'w') as data_file:
+                            data_file.write(json.dumps(data, indent=4))
+                            data_file.close()
             else:
                 data_file.close()
                 return await interaction.response.send_message(f'You have no bids!')
 
-            data_file.close()
-
-        with open('data.json', 'w') as data_file:
-            data_file.write(json.dumps(data, indent=4))
             data_file.close()
             
             await interaction.response.send_message(f'The bid has been deleted')
